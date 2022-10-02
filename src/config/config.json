@@ -1,5 +1,5 @@
 {
-  "development": {
+  "production": {
     "username": "root",
     "password": "",
     "database": "branded_vastra",
@@ -19,7 +19,7 @@
     "host": "localhost",
     "dialect": "mysql"
   },
-  "production": {
+  "development": {
     "username": "u805865875_root",
     "password": "root@12#$%Password",
     "database": "u805865875_branded_vastra",
