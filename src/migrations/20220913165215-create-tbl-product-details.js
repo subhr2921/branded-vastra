@@ -20,7 +20,7 @@ module.exports = {
       },
       size_id: {
         type: Sequelize.INTEGER,
-        allowNull:false,
+        allowNull:true,
         references:{
           model:{
             tableName:'tbl_size_masters'
@@ -30,7 +30,7 @@ module.exports = {
       },
       color_id: {
         type: Sequelize.INTEGER,
-        allowNull:false,
+        allowNull:true,
         references:{
           model:{
             tableName:'tbl_color_masters'

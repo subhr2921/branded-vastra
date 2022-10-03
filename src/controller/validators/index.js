@@ -25,6 +25,7 @@ const productValidator = {
         sold:{type:"number"},
         defective:{type:"number"},
         available:{type:"number"},
+        cost_price:{type:"string"},
     },
     required:["unique_no","product_name","mrp","price","quantity","category_id"],
     additionalProperties:false

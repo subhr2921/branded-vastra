@@ -4,8 +4,11 @@ const { productValidator } =  require("./validators");
 const { commonResponse } =  require("../helpers/commonResponse");
 const { extractTokenInfo } =  require("../helpers/extractTokenInfo");
 const moment =  require("moment");
+const readXlsxFile = require('read-excel-file/node')
+const path = require("path")
 const environment = process.env.ENVIRONMENT || "development";
 const config = require(__dirname + "/../config/config.json")[environment];
+const { QueryTypes } = require("sequelize");
 
 const ajv = new Ajv();
 
@@ -39,7 +42,7 @@ const addProduct = async (req, res) => {
 
     var productTblData = {
       unique_no: req.body.unique_no,
-      brand_id: req.body.brand_id,
+      brand_id: req.body.brand_id || null,
       category_id: req.body.category_id,
       product_name: req.body.product_name,
       description: req.body.description || null,
@@ -51,11 +54,11 @@ const addProduct = async (req, res) => {
     };
 
     var productDetailsTblData = {
-      size_id: req.body.size_id,
-      color_id: req.body.color_id,
+      size_id: req.body.size_id || null,
+      color_id: req.body.color_id  || null,
       quantity: req.body.quantity,
-      sold: req.body.sold,
-      defective: req.body.defective,
+      sold: req.body.sold || null,
+      defective: req.body.defective || null,
       available: req.body.available,
       created_by: loginInfo.user_id || null,
     };
@@ -179,10 +182,98 @@ const productList = async (req, res) => {
   }
 };
 
+const excelProductImport = async (req, res) => {
+  try{
+    let filename = "";
+    const headers = req.headers;
+    const loginInfo = extractTokenInfo(res, headers);
+    if (loginInfo === null) {
+      return commonResponse(res, 400, [], [], "No user id found");
+    }
+    if (req.files.excel_file.size > 0) {
+      filename = Date.now() + "_" + req.files.excel_file.name;
+      let newPath = path.join(process.cwd(), "src/assets/uploads", filename);
+      await req.files.excel_file.mv(newPath);
+    }
+    let duplicateProductIds = [];
+    let excelFilePath =path.join(process.cwd(), "/src/assets/uploads/" + filename);
+    readXlsxFile(excelFilePath).then((rows) => {
+      rows.shift()
+      rows.forEach(async(row) => {
+        let duplicateCheck = await db.tbl_products.findAll({
+          where: {
+            unique_no: row[0],
+          },
+        });
+        duplicateCheck = JSON.parse(JSON.stringify(duplicateCheck, null, 2));
+        if(duplicateCheck.length>0){
+          await db.tbl_products.update({
+            mrp:row[2],
+            discount: row[8],
+            price: row[4],
+            cost_price: row[3],
+          },{
+            where:{
+              id:duplicateCheck[0].id
+            }
+          })
+          await db.sequelize.query(
+            `UPDATE tbl_product_details SET available = available + :available , quantity = quantity + :quantity WHERE product_id = :product_id`,
+            {
+              replacements: { quantity: Number(row[5]), available: Number(row[5]), product_id: duplicateCheck[0].id },
+              plain: false,
+              raw: true,
+              type: QueryTypes.UPDATE,
+            }
+          );
+        }else{
+          var productTblData = {
+            unique_no: row[0],
+            brand_id: null,
+            category_id: Number(row[6]),
+            product_name: row[7],
+            description: null,
+            mrp: row[2],
+            discount: row[8],
+            price: row[4],
+            cost_price: row[3],
+            created_by: loginInfo.user_id || null,
+          };
+          //Product table data create
+          let productTblInsert = await db.tbl_products.create(productTblData);
+          productTblInsert = JSON.parse(JSON.stringify(productTblInsert, null, 2));
+          
+          var productDetailsTblData = {
+            size_id: null,
+            color_id: null,
+            quantity: Number(row[5]),
+            sold: null,
+            defective: null,
+            available: row[5],
+            created_by: loginInfo.user_id || null,
+          };
+  
+          //Product details table data create
+          productDetailsTblData.product_id = productTblInsert.id;
+          let productDetailsTblInsert = await db.tbl_product_details.create(
+            productDetailsTblData
+          );
+        }
+      });
+    }).catch((err)=>{
+      console.log('error', err.message)
+    })
+    return commonResponse(res, 200, []);
+  }catch(err){
+    return commonResponse(res, 500, [], err.message, "", environment);
+  }
+}
+
 
 const productController = {
   addProduct,
   productList,
+  excelProductImport
 };
 
 module.exports = productController;

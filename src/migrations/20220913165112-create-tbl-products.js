@@ -14,7 +14,7 @@ module.exports = {
       },
       brand_id: {
         type: Sequelize.INTEGER,
-        allowNull:false,
+        allowNull:true,
         references:{
           model:{
             tableName:'tbl_brand_masters'

@@ -1,8 +1,8 @@
 {
-  "production": {
+  "development": {
     "username": "root",
     "password": "",
-    "database": "branded_vastra",
+    "database": "u805865875_branded_vastra",
     "host": "localhost",
     "dialect": "mysql",
     "timezone":"+05:30",
@@ -19,7 +19,7 @@
     "host": "localhost",
     "dialect": "mysql"
   },
-  "development": {
+  "production": {
     "username": "u805865875_root",
     "password": "root@12#$%Password",
     "database": "u805865875_branded_vastra",

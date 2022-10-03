@@ -65,9 +65,9 @@ const createSale = async (req, res) => {
     let orderDetailsTblData = [];
     for (let i = 0; i < productId.length; i++) {
       await db.sequelize.query(
-        `UPDATE tbl_product_details SET quantity = quantity - :soldQuantity WHERE product_id = :product_id`,
+        `UPDATE tbl_product_details SET sold = sold + :soldQuantity , available = available - :available WHERE product_id = :product_id`,
         {
-          replacements: { soldQuantity: quantity[i], product_id: productId[i] },
+          replacements: { soldQuantity: quantity[i], available: quantity[i], product_id: productId[i] },
           plain: false,
           raw: true,
           type: QueryTypes.UPDATE,
