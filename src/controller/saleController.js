@@ -63,31 +63,34 @@ const createSale = async (req, res) => {
     let discount = JSON.parse(req.body.discount);
     let gstAmount = JSON.parse(req.body.gstAmount);
     let amount = JSON.parse(req.body.amount);
-
     let orderDetailsTblData = [];
     for (let i = 0; i < productId.length; i++) {
-      await db.sequelize.query(
-        `UPDATE tbl_product_details SET sold = sold + :soldQuantity , available = available - :available WHERE product_id = :product_id`,
-        {
-          replacements: { soldQuantity: quantity[i], available: quantity[i], product_id: productId[i] },
-          plain: false,
-          raw: true,
-          type: QueryTypes.UPDATE,
-        }
-      );
+      if(productId[i]){
+        await db.sequelize.query(
+          `UPDATE tbl_product_details SET sold = sold + :soldQuantity , available = available - :available WHERE product_id = :product_id`,
+          {
+            replacements: { soldQuantity: quantity[i], available: quantity[i], product_id: productId[i] },
+            plain: false,
+            raw: true,
+            type: QueryTypes.UPDATE,
+          }
+        );
+      }
     }
     productId.map((item, index) => {
-      orderDetailsTblData.push({
-        customer_id: customerId,
-        order_id: orderId,
-        product_id:item,
-        product_unique_no: productUniqueNo[index],
-        quantity: quantity[index],
-        mrp: productMRP[index],
-        discount: discount[index],
-        gst_amount: gstAmount[index],
-        selling_price: amount[index],
-      });
+      if(item){
+        orderDetailsTblData.push({
+          customer_id: customerId,
+          order_id: orderId,
+          product_id:item,
+          product_unique_no: productUniqueNo[index],
+          quantity: quantity[index],
+          mrp: productMRP[index],
+          discount: discount[index],
+          gst_amount: gstAmount[index],
+          selling_price: amount[index],
+        });
+      }
     });
     let orderDetailsInsert = await db.tbl_order_details.bulkCreate(
       orderDetailsTblData
@@ -103,6 +106,13 @@ const createSale = async (req, res) => {
   }
 };
 
+
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getSaleDataByInvoiceNo = async (req, res) => {
   try {
     let invoice_no = req.param.invoice_no || req.query.invoice_no || null;

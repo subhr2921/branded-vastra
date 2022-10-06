@@ -24,6 +24,7 @@ routes.get("/get-brand-list/:brand_id?/:brand_name?",verifyToken,masterSetupCont
 routes.get("/get-size-list/:size_id?/:size_value?",verifyToken,masterSetupController.getSizeList)
 routes.get("/get-color-list/:color_id?/:color_name?",verifyToken,masterSetupController.getColorList)
 routes.get("/get-product-list/:product_id?/:brand_id?/:unique_no?/:category_id?",verifyToken, productController.productList)
+routes.get("/get-single-product/:product_id?/:unique_no?",verifyToken, productController.getSingleProduct)
 routes.get("/get-category-list/:id?/:category_name?",verifyToken,masterSetupController.getCategoryList)
 routes.get("/get-invoice-no-details/:invoice_no?", verifyToken, saleController.getSaleDataByInvoiceNo)
 routes.get("/get-available-products/:category_id?", verifyToken, dashboardController.getProductCategoryWise)

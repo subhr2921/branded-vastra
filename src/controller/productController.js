@@ -269,11 +269,92 @@ const excelProductImport = async (req, res) => {
   }
 }
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+
+const getSingleProduct = async (req,res) =>{
+  try {
+    let whereCondition = {};
+
+    let productId = req.params.product_id || req.query.product_id || null;
+    let uniqueNo = req.params.unique_no || req.query.unique_no || null;
+    productId !== null ? (whereCondition.id = productId) : "";
+    uniqueNo !== null ? (whereCondition.unique_no = uniqueNo) : "";
+    const productData = await db.tbl_products.findOne({
+      attributes: [
+        "id",
+        "unique_no",
+        "brand_id",
+        "category_id",
+        "product_name",
+        "description",
+        "mrp",
+        "discount",
+        "price",
+        "cost_price",
+        "created_by",
+        "createdAt",
+      ],
+      include: [
+        {
+          model: db.tbl_brand_masters,
+          as: "brandM",
+          attributes: ["id", "brand_code", "brand_logo", "brand_name"],
+        },
+        {
+          model: db.tbl_category_masters,
+          as: "categoryM",
+          attributes: ["id", "category_name", "category_desc"],
+        },
+        {
+          model: db.tbl_product_details,
+          as: "productDetails",
+          attributes: [
+            "id",
+            "product_id",
+            "size_id",
+            "color_id",
+            "quantity",
+            "sold",
+            "defective",
+            "available",
+            "created_by",
+          ],
+          include: [
+            {
+              model: db.tbl_color_masters,
+              as: "colorM",
+              attributes: ["id", "color_name"],
+            },
+            {
+              model: db.tbl_size_masters,
+              as: "sizeM",
+              attributes: ["id", "size", "size_value"],
+            },
+          ],
+        },
+      ],
+      order: [["id", "DESC"]],
+      where: whereCondition,
+    });
+    if(productData?.productDetails?.available===0){
+      return commonResponse(res, 400, [],"No more product is available of given id.", "", environment);
+    }
+    return commonResponse(res, 200, productData);
+  } catch (err) {
+    return commonResponse(res, 500, [], err.message, "", environment);
+  }
+}
 
 const productController = {
   addProduct,
   productList,
-  excelProductImport
+  excelProductImport,
+  getSingleProduct
 };
 
 module.exports = productController;
