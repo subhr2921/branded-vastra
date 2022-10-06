@@ -19,13 +19,6 @@ const addProduct = async (req, res) => {
     if (loginInfo === null) {
       return commonResponse(res, 400, [], [], "No user id found");
     }
-    let duplicateCheck = await db.tbl_products.findOne({
-      where: {
-        unique_no: req.body.unique_no,
-      },
-    });
-    if(duplicateCheck)
-        return commonResponse(res, 409, [], [], "Duplicate Product-Id");
     let key = req.body.key || null;
     let status = req.body.status || null;
     delete req.body.key;
@@ -85,6 +78,13 @@ const addProduct = async (req, res) => {
       });
       return commonResponse(res, 200, []);
     }
+    let duplicateCheck = await db.tbl_products.findOne({
+      where: {
+        unique_no: req.body.unique_no,
+      },
+    });
+    if(duplicateCheck)
+        return commonResponse(res, 409, [], [], "Duplicate Product-Id");
     const valid = validate(req.body);
     if (!valid)
       return commonResponse(res, 400, [], validate.errors, "", environment);
@@ -244,7 +244,7 @@ const excelProductImport = async (req, res) => {
           productTblInsert = JSON.parse(JSON.stringify(productTblInsert, null, 2));
           
           var productDetailsTblData = {
-            size_id: null,
+            size_id: row[1],
             color_id: null,
             quantity: Number(row[5]),
             sold: null,

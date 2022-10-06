@@ -10,7 +10,9 @@ const config = require(__dirname + "/../config/config.json")[environment];
 
 const ajv = new Ajv();
 const createSale = async (req, res) => {
+  let transaction;
   try {
+    transaction = await db.sequelize.transaction();
     /** Customer Data Insert Start */
     let customerTblData = {
       name: req.body.full_name || null,
@@ -28,7 +30,7 @@ const createSale = async (req, res) => {
 
     /** Order Data Insert Start */
     let orderTblData = {
-      customer_id: customerInsert?.id,
+      customer_id: customerId,
       total_amount: req.body.total_amount,
       gst_amount: req.body.total_gst,
     };
@@ -40,7 +42,7 @@ const createSale = async (req, res) => {
 
     /** Invoice No Update */
     let invoice_no = `${moment().format("YYYYMMDD")}-${
-      customerInsert?.id
+      customerId
     }-${orderId}`;
     await db.tbl_orders.update(
       {
@@ -76,7 +78,7 @@ const createSale = async (req, res) => {
     }
     productId.map((item, index) => {
       orderDetailsTblData.push({
-        customer_id: customerInsert?.id,
+        customer_id: customerId,
         order_id: orderId,
         product_id:item,
         product_unique_no: productUniqueNo[index],
@@ -90,11 +92,13 @@ const createSale = async (req, res) => {
     let orderDetailsInsert = await db.tbl_order_details.bulkCreate(
       orderDetailsTblData
     );
-
+    await transaction.commit();
     /** Order Details Table Data End */
-    if (orderDetailsInsert) return commonResponse(res, 200, invoice_no);
-    return commonResponse(res, 500, []);
+    return commonResponse(res, 200, invoice_no);
   } catch (err) {
+    if(transaction) {
+      await transaction.rollback();
+    }
     return commonResponse(res, 500, [], err.message, "", environment);
   }
 };
