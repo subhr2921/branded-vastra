@@ -4,7 +4,7 @@ const { productValidator } = require("./validators");
 const { commonResponse } = require("../helpers/commonResponse");
 const { extractTokenInfo } = require("../helpers/extractTokenInfo");
 const moment = require("moment");
-const { QueryTypes } = require("sequelize");
+const { QueryTypes, Op, col} = require("sequelize");
 const environment = process.env.ENVIRONMENT || "development";
 const config = require(__dirname + "/../config/config.json")[environment];
 
@@ -174,9 +174,76 @@ const getSaleDataByInvoiceNo = async (req, res) => {
   }
 };
 
+
+const getSaleReport = async (req, res)  =>{
+  try {
+    let fromDate = req.param.fromDate || req.query.fromDate || moment().format("YYYY-MM-DD");
+    let toDate = req.param.toDate || req.query.toDate ||  moment().format("YYYY-MM-DD");
+    fromDate = `${fromDate} 00:00:00`
+    toDate = `${toDate} 23:59:59`
+    let data = await db.tbl_orders.findAll({
+      attributes: [
+        "id",
+        "customer_id",
+        "invoice_no",
+        "total_amount",
+        "gst_amount",
+        "createdAt",
+      ],
+      include: [
+        {
+          model: db.tbl_customer_masters,
+          as: "customers",
+          attributes: ["id", "name", "address", "mobile_no", "createdAt"],
+        },
+        {
+          model: db.tbl_order_details,
+          as: "orderDetails",
+          attributes: [
+            "id",
+            "customer_id",
+            "order_id",
+            "product_id",
+            "product_unique_no",
+            "mrp",
+            "discount",
+            "gst_amount",
+            "selling_price",
+            "quantity",
+          ],
+          include: [
+            {
+              model: db.tbl_products,
+              as: "products",
+              attributes: [
+                "id",
+                "brand_id",
+                "product_name",
+                "description",
+                "mrp",
+                "discount",
+                "price",
+              ],
+            },
+          ],
+        },
+      ],
+      where:{
+        createdAt : {
+          [Op.between]: [fromDate, toDate],
+        }
+      }
+    });
+    return commonResponse(res, 200, data);
+  } catch (err) {
+    return commonResponse(res, 500, [], err.message, "", environment);
+  }
+}
+
 const saleController = {
   createSale,
   getSaleDataByInvoiceNo,
+  getSaleReport
 };
 
 module.exports = saleController;

@@ -30,5 +30,6 @@ routes.get("/get-invoice-no-details/:invoice_no?", verifyToken, saleController.g
 routes.get("/get-available-products/:category_id?", verifyToken, dashboardController.getProductCategoryWise)
 routes.get("/get-sale-amount/:from_date?/:to_date?", verifyToken, dashboardController.getSaleAmount)
 routes.get("/get-category-wise-sale?", verifyToken, dashboardController.getCategoryWiseSale)
+routes.get("/get-sale-report/:fromDate?/:toDate?/", verifyToken, saleController.getSaleReport)
 
 module.exports = routes
